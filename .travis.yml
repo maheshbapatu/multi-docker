@@ -1,0 +1,28 @@
+# Telling the travis the pre requirements through this file
+
+# Sudo permission for the docker is required.
+# Before our tests run we have to build our docker image
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t maheshbapatur/react-test -f ./client/Dockerfile.dev ./client
+# handling failed builds
+script:
+  - docker run -e CI=true maheshbapatur/react-test npm run test
+
+# Once Travis CI build is successful we are trying to build and push the images to docker-hub
+after_success:
+  - docker build -t maheshbapatur/multi-client ./client
+  - docker build -t maheshbapatur/multi-nginx ./nginx
+  - docker build -t maheshbapatur/multi-server ./server
+  - docker build -t maheshbapatur/multi-worker ./worker
+  # Login to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push to docker hub
+  - docker push maheshbapatur/multi-client
+  - docker push maheshbapatur/multi-nginx
+  - docker push maheshbapatur/multi-server
+  - docker push maheshbapatur/multi-worker  
